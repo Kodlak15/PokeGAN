@@ -27,16 +27,18 @@ def train_discriminator(D: nn.Module, G: nn.Module, images: Tensor, opt_d: torch
     opt_d.zero_grad()
 
     real_preds = D(images)
-    real_targets = torch.ones(images.size(0), 1, device=device)
-    real_loss = F.binary_cross_entropy(real_preds, real_targets)
+    real_targets = torch.ones(images.size(0), 1, device=device) # Make noisy
+    real_noisy_targets = (0.7 - 1.2) * torch.rand(images.size(0), 1, device=device) + 1.2
+    real_loss = F.binary_cross_entropy(real_preds, real_noisy_targets)
     real_score = torch.mean(real_preds).item()
 
     x = torch.randn(images.size(0), latent_size, 1, 1, device=device)
     fake_images = G(x)
 
     fake_preds = D(fake_images)
-    fake_targets = torch.zeros(fake_images.size(0), 1, device=device)
-    fake_loss = F.binary_cross_entropy(fake_preds, fake_targets)
+    fake_targets = torch.zeros(fake_images.size(0), 1, device=device) # Make noisy
+    fake_noisy_targets = (0.0 - 0.3) * torch.rand(fake_images.size(0), 1, device=device) + 0.3
+    fake_loss = F.binary_cross_entropy(fake_preds, fake_noisy_targets)
     fake_score = torch.mean(fake_preds).item()
 
     loss = real_loss + fake_loss

@@ -16,21 +16,21 @@ fake_dir = join(root_dir, "fakes")
 weights_dir = join(root_dir, "weights")
 history_dir = join(root_dir, "history")
 
-# train_stats = [0.8577, 0.8482, 0.8384], [0.0579, 0.0565, 0.0608]
 img_size = 128
 batch_size = 64
+train_stats = [0.1874, 0.1779, 0.1681], [1.0, 1.0, 1.0]
 
 train_transform = T.Compose([
     T.Lambda(lambda img: transform_image(img)),
-    T.ColorJitter(brightness=0, contrast=0, saturation=(1.0, 1.5), hue=(-0.15, 0.15)),
     T.Resize(img_size),
     T.CenterCrop(img_size),
     T.RandomHorizontalFlip(0.2),
     T.RandomRotation(3, fill=0),
     T.ToTensor(),
+    T.Normalize(*train_stats)
 ])
 
-# T.Normalize(*train_stats)
+# T.ColorJitter(brightness=0, contrast=0, saturation=(1.0, 1.5), hue=(-0.15, 0.15)),
 
 def run():
     try:
