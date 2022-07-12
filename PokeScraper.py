@@ -10,12 +10,7 @@ import random
 import json
 from utils import format_path
 
-root_dir = os.getcwd()
-img_dir = join(root_dir, "images")
-train_dir = format_path(join(img_dir, "train-images"))
-
-if not "images" in os.listdir(root_dir):
-    os.mkdir(img_dir)
+root_dir, img_dir, train_dir, fake_dir, weights_dir, history_dir = get_paths()
 
 def get_image_urls(refresh=False, seed=15):
     url = "https://www.pokemon.com/us/pokedex/"

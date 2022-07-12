@@ -2,12 +2,9 @@ import torch
 import torch.nn as nn
 import os
 from os.path import join
+from utils import get_paths
 
-root_dir = os.getcwd()
-weights_dir = join(root_dir, "weights")
-
-if not "weights" in os.listdir(root_dir):
-    os.mkdir(weights_dir)
+root_dir, img_dir, train_dir, fake_dir, weights_dir, history_dir = get_paths()
 
 class Discriminator(nn.Module):
     def __init__(self):

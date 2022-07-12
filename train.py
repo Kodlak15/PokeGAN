@@ -4,30 +4,23 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
 from tqdm import tqdm
-from device_mgmt import *
+from device_mgmt import get_default_device, to_device, DeviceDataLoader
 from models import Discriminator, Generator
-from utils import make_video, save_samples
+from utils import make_video, save_samples, get_paths
 import os
 from os.path import join
 import json
 import shutil
 
-root_dir = os.getcwd()
-history_dir = join(root_dir, "history")
-weights_dir = join(root_dir, "weights")
-
-if not "history" in os.listdir(root_dir):
-    os.mkdir(history_dir)
-    with open(join(history_dir, "history.json"), 'w') as f:
-        json.dump({"history": []}, f)
-
+root_dir, img_dir, train_dir, fake_dir, weights_dir, history_dir = get_paths()
 latent_size = 128
+batch_size = 256
 
 def train_discriminator(D: nn.Module, G: nn.Module, images: Tensor, opt_d: torch.nn.functional, device: torch.device):
     opt_d.zero_grad()
 
     real_preds = D(images)
-    real_targets = torch.ones(images.size(0), 1, device=device) # Make noisy
+    real_targets = torch.ones(images.size(0), 1, device=device)
     real_noisy_targets = (0.7 - 1.2) * torch.rand(images.size(0), 1, device=device) + 1.2
     real_loss = F.binary_cross_entropy(real_preds, real_noisy_targets)
     real_score = torch.mean(real_preds).item()
@@ -36,7 +29,7 @@ def train_discriminator(D: nn.Module, G: nn.Module, images: Tensor, opt_d: torch
     fake_images = G(x)
 
     fake_preds = D(fake_images)
-    fake_targets = torch.zeros(fake_images.size(0), 1, device=device) # Make noisy
+    fake_targets = torch.zeros(fake_images.size(0), 1, device=device)
     fake_noisy_targets = (0.0 - 0.3) * torch.rand(fake_images.size(0), 1, device=device) + 0.3
     fake_loss = F.binary_cross_entropy(fake_preds, fake_noisy_targets)
     fake_score = torch.mean(fake_preds).item()
@@ -63,9 +56,7 @@ def train_generator(D: nn.Module, G: nn.Module, batch_size: int, opt_g: torch.nn
     return loss.item()
 
 def fit(D: nn.Module, G: nn.Module, train_dl: DataLoader, epochs: int, lr: float, device: torch.device, start_idx=1):
-    clear_cache_and_get_info(device)
-
-    # Create backups in case model collapses during training
+    # Create backups
     shutil.copy(join(history_dir, "history.json"), join(history_dir, "history_backup.json"))
 
     if "Discriminator.pth" in os.listdir(weights_dir):
@@ -101,7 +92,7 @@ def fit(D: nn.Module, G: nn.Module, train_dl: DataLoader, epochs: int, lr: float
         print(epoch_results)
         history.append(epoch_results[epoch_results.find(',')+2:])
 
-        x = torch.randn(64, latent_size, 1, 1, device=device)
+        x = torch.randn(batch_size, latent_size, 1, 1, device=device)
         save_samples(G, epoch+start_idx, x)
         D.save()
         G.save()

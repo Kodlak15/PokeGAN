@@ -1,36 +1,13 @@
 from random import shuffle
 import torchvision.transforms as T
 from torch.utils.data import DataLoader
-from utils import transform_image, format_path
+from utils import transform_image, format_path, get_paths
 from device_mgmt import get_default_device, DeviceDataLoader, to_device
 from models import Discriminator, Generator
 from dataset import PokemonDataset
 from train import fit
 import os
 from os.path import join
-
-root_dir = os.getcwd()
-img_dir = format_path(join(root_dir, "images"))
-train_dir = format_path(join(img_dir, "train-images"))
-fake_dir = join(root_dir, "fakes")
-weights_dir = join(root_dir, "weights")
-history_dir = join(root_dir, "history")
-
-img_size = 128
-batch_size = 64
-train_stats = [0.1874, 0.1779, 0.1681], [1.0, 1.0, 1.0]
-
-train_transform = T.Compose([
-    T.Lambda(lambda img: transform_image(img)),
-    T.Resize(img_size),
-    T.CenterCrop(img_size),
-    T.RandomHorizontalFlip(0.2),
-    T.RandomRotation(3, fill=0),
-    T.ToTensor(),
-    T.Normalize(*train_stats)
-])
-
-# T.ColorJitter(brightness=0, contrast=0, saturation=(1.0, 1.5), hue=(-0.15, 0.15)),
 
 def run():
     try:
@@ -49,8 +26,25 @@ def run():
     train_dl = DeviceDataLoader(train_dl, device)
     D = to_device(Discriminator(), device)
     G = to_device(Generator(), device)
+
     return fit(D, G, train_dl, epochs, lr, device, start_idx=len(os.listdir(fake_dir))+1)
 
 if __name__ == "__main__":
+    root_dir, img_dir, train_dir, fake_dir, weights_dir, history_dir = get_paths()
+    
+    img_size = 128
+    batch_size = 256
+    train_stats = [0.1874, 0.1779, 0.1681], [1.0, 1.0, 1.0]
+
+    train_transform = T.Compose([
+        T.Lambda(lambda img: transform_image(img)),
+        T.Resize(img_size),
+        T.CenterCrop(img_size),
+        T.RandomHorizontalFlip(0.2),
+        T.RandomRotation(3, fill=0),
+        T.ToTensor(),
+        T.Normalize(*train_stats)
+    ])
+
     run()
     input("Training finished, press enter to exit...")
